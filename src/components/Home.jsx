@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AddRecipeModal from "./AddRecipeModal";
 import RecipeDetail from "./RecipeDetail";
-import { AiOutlinePlus } from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineDelete } from "react-icons/ai";
 
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +20,12 @@ const Home = () => {
     const dataToSet = [...recipeData, recipe];
     setRecipeData(dataToSet);
     localStorage.setItem("recipe", JSON.stringify(dataToSet));
+  };
+
+  const handleDelete = (id) => {
+    const updatedRecipeData = recipeData.filter((data) => data.id !== id);
+    setRecipeData(updatedRecipeData)
+    localStorage.setItem("recipe", JSON.stringify(updatedRecipeData));
   };
 
   useEffect(() => {
@@ -46,7 +52,20 @@ const Home = () => {
                       className=" p-2 rounded hover:cursor-pointer hover:bg-gray-300 "
                       onClick={() => handleTitleClick(recipe.id)}
                     >
-                      {"->"}{recipe.title}
+                      <span className=" flex justify-between">
+                        <span>
+                          {"->"} {recipe.title}
+                        </span>
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(recipe.id);
+                          }}
+                          className=" hover:text-red-700"
+                        >
+                          <AiOutlineDelete />
+                        </span>
+                      </span>
                     </div>
                   </div>
                 );
