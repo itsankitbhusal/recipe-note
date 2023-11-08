@@ -19,7 +19,7 @@ const AddRecipeModal = ({
     } else {
       setRecipe({
         ...recipe,
-        id: recipeData.length,
+        id: recipeData.length + 1,
         [name]: value,
       });
     }
