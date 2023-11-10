@@ -4,6 +4,19 @@ import RecipeDetail from "./RecipeDetail";
 import { AiOutlinePlus } from "react-icons/ai";
 import { toast } from "react-toastify";
 
+const DB_NAME = "recipe-note";
+
+// firebase import
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
+
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeData, setRecipeData] = useState([]);
@@ -16,32 +29,82 @@ const Home = () => {
     setIsOpen(true);
   };
   const handleClose = () => {
+    setEditId(null);
+    // setSelectedId(null);
     setIsOpen(false);
   };
 
-  const handleSave = (recipe) => {
-    const existingRecipe = recipeData.find((r) => +r.id === +recipe.id);
-  
+  // firebase add
+  const addRecipe = async (recipe) => {
+    try {
+      const docRef = await addDoc(collection(db, DB_NAME), recipe);
+      return docRef.id;
+    } catch (error) {
+      console.error("Error: ", error);
+    }
+  };
+
+  // firebase read
+  const fetchData = async () => {
+    // await getDocs(collection(db, DB_NAME)).then((querySnapshot) => {
+    //   const newData = querySnapshot.docs.map((doc) => ({
+    //     ...doc.data().recipe,
+    //     id: doc.id,
+    //   }));
+
+    //   setRecipeData(newData);
+    // });
+
+    const querySnapshot = await getDocs(collection(db, DB_NAME));
+    const newData = [];
+    querySnapshot.forEach((doc) => {
+      const dbData = { id: doc.id, ...doc.data().recipe };
+      newData.push(dbData);
+    });
+    setRecipeData(newData);
+  };
+
+  // firebase delete
+  const deleteData = async (id) => {
+    await deleteDoc(doc(db, DB_NAME, id));
+  };
+
+  // edit data
+  const editData = async (recipe) => {
+    await updateDoc(doc(db, DB_NAME, recipe.id), { recipe });
+  };
+
+  const handleSave = async (recipe) => {
+    let existingRecipe;
+    if (recipeData.length > 0) {
+      existingRecipe = recipeData.find((r) => r.id === recipe.id);
+    }
     if (existingRecipe) {
+      // console.log("old need to update");
       const updateData = recipeData.map((r) =>
         r.id === recipe.id ? { ...r, ...recipe } : r
       );
+      editData(recipe);
       setRecipeData(updateData);
-      localStorage.setItem("recipe", JSON.stringify(updateData));
     } else {
-      const newData = [...recipeData, recipe];
-      setRecipeData(newData);
-      localStorage.setItem("recipe", JSON.stringify(newData));
+      // console.log("new data");
+      const newData = { ...recipeData, recipe };
+      const id = await addRecipe(newData);
+      setRecipeData([...recipeData, { ...recipe, id: id }]);
     }
   };
 
   const handleDelete = (id) => {
-    const confirmDelete = confirm("Are you sure you want to delete the recipe");
-    if (confirmDelete) {
-      const updatedRecipeData = recipeData.filter((data) => data.id !== id);
-      setRecipeData(updatedRecipeData);
-      localStorage.setItem("recipe", JSON.stringify(updatedRecipeData));
-      toast.success("Recipe deleted successfully");
+    const confirm = window.confirm(
+      "Are you sure you want to delete the recipe"
+    );
+    if (confirm) {
+      if (deleteData(id)) {
+        const updatedRecipeData = recipeData.filter((data) => data.id !== id);
+        setRecipeData(updatedRecipeData);
+        setSelectedId(null);
+        toast.success("Recipe deleted successfully");
+      }
     }
   };
 
@@ -55,10 +118,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("recipe"));
-    if (data) {
-      setRecipeData(data);
-    }
+    fetchData();
   }, []);
 
   const handleTitleClick = (id) => {
@@ -68,8 +128,8 @@ const Home = () => {
   return (
     <div className="relative min-h-screen w-full grid place-items-center">
       {recipeData.length > 0 ? (
-        <div className=" flex gap-8 w-10/12 min-h-[80vh] mt-12">
-          <div className=" border-b-2 max-h-[80vh] overflow-x-auto w-4/12 px-8 py-4 min-h-full outline rounded outline-1 outline-gray-200">
+        <div className=" flex gap-8 w-10/12 min-h-[90vh] ">
+          <div className=" border-b-2 max-h-[90vh] overflow-x-auto w-4/12 px-8 py-4 min-h-full outline rounded outline-1 outline-gray-200">
             <div className=" border-b-[1px] mb-2">
               <div className=" mb-2  font-semibold tracking-tighter text-xl flex  justify-between items-center ">
                 <h3>Recipe List</h3>
@@ -101,7 +161,7 @@ const Home = () => {
                 })
               : "no data found"}
           </div>
-          <div className=" w-8/12 max-h-[80vh] overflow-y-auto outline rounded outline-1 outline-gray-200">
+          <div className=" w-8/12 max-h-[90vh] overflow-y-auto outline rounded outline-1 outline-gray-200">
             {selectedId && (
               <RecipeDetail
                 data={recipeData.filter((obj) => obj.id === selectedId)}

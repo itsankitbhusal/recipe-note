@@ -1,22 +1,24 @@
 import { useEffect } from "react";
 import { useState } from "react";
 
-const AddRecipeModal = ({ isOpen, onClose, onSave, recipeData, updateData }) => {
+const AddRecipeModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  recipeData,
+  updateData,
+}) => {
   const [recipe, setRecipe] = useState({});
 
   useEffect(() => {
     if (updateData) {
       setRecipe(updateData[0]);
     } else {
-      console.log("no data caught")
+      console.log("no data caught");
     }
   }, [updateData]);
 
-
   const handleInputChange = (e) => {
-    // console.log("recipe", recipe)
-    // console.log("recipe data: ", recipeData);
-
     const { name, value } = e.target;
     if (name === "ingredients") {
       setRecipe({
@@ -24,13 +26,8 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, recipeData, updateData }) => 
         [name]: value.split(","),
       });
     } else {
-      const newId = Math.floor(Math.random() * (recipeData.length + 1 + 1000));
       setRecipe({
         ...recipe,
-        id: updateData[0].id
-          ? updateData[0].id
-          : newId,
-        // id: recipeData.length + 1,
         [name]: value,
       });
     }
@@ -123,7 +120,10 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, recipeData, updateData }) => 
               Save
             </button>
             <button
-              onClick={onClose}
+              onClick={() => {
+                setRecipe({});
+                onClose()
+              }}
               type="button"
               className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
