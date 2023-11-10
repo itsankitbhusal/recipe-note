@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import AddRecipeModal from "./AddRecipeModal";
 import RecipeDetail from "./RecipeDetail";
-import { AiOutlinePlus, AiOutlineDelete } from "react-icons/ai";
+import { AiOutlinePlus } from "react-icons/ai";
+import { toast } from "react-toastify";
 
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeData, setRecipeData] = useState([]);
 
   const [selectedId, setSelectedId] = useState(null);
+
+  const [editId, setEditId] = useState(null);
 
   const handleAdd = () => {
     setIsOpen(true);
@@ -17,16 +20,38 @@ const Home = () => {
   };
 
   const handleSave = (recipe) => {
-    const dataToSet = [...recipeData, recipe];
-    setRecipeData(dataToSet);
-    localStorage.setItem("recipe", JSON.stringify(dataToSet));
+    const existingRecipe = recipeData.find((r) => +r.id === +recipe.id);
+  
+    if (existingRecipe) {
+      const updateData = recipeData.map((r) =>
+        r.id === recipe.id ? { ...r, ...recipe } : r
+      );
+      setRecipeData(updateData);
+      localStorage.setItem("recipe", JSON.stringify(updateData));
+    } else {
+      const newData = [...recipeData, recipe];
+      setRecipeData(newData);
+      localStorage.setItem("recipe", JSON.stringify(newData));
+    }
   };
 
   const handleDelete = (id) => {
-    const updatedRecipeData = recipeData.filter((data) => data.id !== id);
-    setRecipeData(updatedRecipeData);
-    setSelectedId(id - 1);
-    localStorage.setItem("recipe", JSON.stringify(updatedRecipeData));
+    const confirmDelete = confirm("Are you sure you want to delete the recipe");
+    if (confirmDelete) {
+      const updatedRecipeData = recipeData.filter((data) => data.id !== id);
+      setRecipeData(updatedRecipeData);
+      localStorage.setItem("recipe", JSON.stringify(updatedRecipeData));
+      toast.success("Recipe deleted successfully");
+    }
+  };
+
+  const handleEdit = (id) => {
+    if (!id) {
+      toast.error("id not provided");
+      return;
+    }
+    setIsOpen(true);
+    setEditId(id);
   };
 
   useEffect(() => {
@@ -44,13 +69,15 @@ const Home = () => {
     <div className="relative min-h-screen w-full grid place-items-center">
       {recipeData.length > 0 ? (
         <div className=" flex gap-8 w-10/12 min-h-[80vh] mt-12">
-          <div className=" max-h-[80vh] overflow-x-auto w-4/12 px-8 py-4 min-h-full outline rounded outline-1 outline-gray-200">
-            <div className=" font-semibold tracking-tighter text-xl flex  justify-between items-center mb-4">
-              <h3>Recipe List</h3>
-              <AiOutlinePlus
-                onClick={handleAdd}
-                className=" hover:cursor-pointer text-gray-700 hover:rotate-180 transition-transform hover:text-gray-900 font-bold text-3xl"
-              />
+          <div className=" border-b-2 max-h-[80vh] overflow-x-auto w-4/12 px-8 py-4 min-h-full outline rounded outline-1 outline-gray-200">
+            <div className=" border-b-[1px] mb-2">
+              <div className=" mb-2  font-semibold tracking-tighter text-xl flex  justify-between items-center ">
+                <h3>Recipe List</h3>
+                <AiOutlinePlus
+                  onClick={handleAdd}
+                  className=" mr-1 hover:cursor-pointer text-gray-700 hover:rotate-180 transition-transform hover:text-gray-900 font-bold text-3xl"
+                />
+              </div>
             </div>
             {recipeData
               ? recipeData.map((recipe, index) => {
@@ -62,22 +89,11 @@ const Home = () => {
                         } p-2 rounded hover:cursor-pointer hover:bg-gray-300 `}
                         onClick={() => handleTitleClick(recipe.id)}
                       >
-                        <span className=" flex justify-between">
-                          <span className=" uppercase">
-                            {"->"}{" "}
-                            {recipe.title && recipe.title.length > 30
-                              ? recipe.title.slice(0, 30) + "..."
-                              : recipe.title || "Untitled Recipe"}
-                          </span>
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(recipe.id);
-                            }}
-                            className=" hover:text-red-600"
-                          >
-                            <AiOutlineDelete className=" text-xl" />
-                          </span>
+                        <span className=" uppercase">
+                          {"->"}{" "}
+                          {recipe.title && recipe.title.length > 30
+                            ? recipe.title.slice(0, 30) + "..."
+                            : recipe.title || "Untitled Recipe"}
                         </span>
                       </div>
                     </div>
@@ -89,16 +105,29 @@ const Home = () => {
             {selectedId && (
               <RecipeDetail
                 data={recipeData.filter((obj) => obj.id === selectedId)}
+                handleDelete={handleDelete}
+                handleEdit={handleEdit}
               />
             )}
           </div>
-          <AddRecipeModal
-            isOpen={isOpen}
-            onClose={handleClose}
-            onSave={handleSave}
-            recipeData={recipeData}
-            setRecipeData={setRecipeData}
-          />
+          {editId ? (
+            <AddRecipeModal
+              isOpen={isOpen}
+              onClose={handleClose}
+              onSave={handleSave}
+              recipeData={recipeData}
+              updateData={recipeData.filter((obj) => obj.id === editId)}
+              setRecipeData={setRecipeData}
+            />
+          ) : (
+            <AddRecipeModal
+              isOpen={isOpen}
+              onClose={handleClose}
+              onSave={handleSave}
+              recipeData={recipeData}
+              setRecipeData={setRecipeData}
+            />
+          )}
         </div>
       ) : (
         <div className=" ">
