@@ -1,15 +1,22 @@
+import { useEffect } from "react";
 import { useState } from "react";
 
-const AddRecipeModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  recipeData,
-  setRecipeData,
-}) => {
+const AddRecipeModal = ({ isOpen, onClose, onSave, recipeData, updateData }) => {
   const [recipe, setRecipe] = useState({});
 
+  useEffect(() => {
+    if (updateData) {
+      setRecipe(updateData[0]);
+    } else {
+      console.log("no data caught")
+    }
+  }, [updateData]);
+
+
   const handleInputChange = (e) => {
+    // console.log("recipe", recipe)
+    // console.log("recipe data: ", recipeData);
+
     const { name, value } = e.target;
     if (name === "ingredients") {
       setRecipe({
@@ -17,9 +24,12 @@ const AddRecipeModal = ({
         [name]: value.split(","),
       });
     } else {
+      const newId = Math.floor(Math.random() * (recipeData.length + 1 + 1000));
       setRecipe({
         ...recipe,
-        id: Math.floor(Math.random() * (recipeData.length + 1 + 1000)),
+        id: updateData[0].id
+          ? updateData[0].id
+          : newId,
         // id: recipeData.length + 1,
         [name]: value,
       });
