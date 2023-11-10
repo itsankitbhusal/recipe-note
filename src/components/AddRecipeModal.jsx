@@ -19,7 +19,8 @@ const AddRecipeModal = ({
     } else {
       setRecipe({
         ...recipe,
-        id: recipeData.length + 1,
+        id: Math.floor(Math.random() * (recipeData.length + 1 + 1000)),
+        // id: recipeData.length + 1,
         [name]: value,
       });
     }
