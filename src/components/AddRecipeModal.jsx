@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import ErrorMessage from "./ErrorMessage";
@@ -11,41 +10,35 @@ const AddRecipeModal = ({
   recipeData,
   updateData,
 }) => {
-  const [recipe, setRecipe] = useState({});
-
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    reset,
   } = useForm();
 
   useEffect(() => {
     if (updateData) {
-      setRecipe(updateData[0]);
+      setValue("title", updateData[0].title);
+      setValue("description", updateData[0].description);
+      setValue("ingredients", updateData[0].ingredients.join(", "));
+      setValue("image", updateData[0].image);
     } else {
       console.log("no data caught");
     }
-  }, [updateData]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "ingredients") {
-      setRecipe({
-        ...recipe,
-        [name]: value.split(","),
-      });
-    } else {
-      setRecipe({
-        ...recipe,
-        [name]: value,
-      });
-    }
-  };
+  }, [updateData, setValue]);
 
   const handleSave = (data) => {
-    onSave(data);
-    setRecipe({});
-    onClose();
+    if (data.ingredients) {
+      const ingArr = data.ingredients.split(",");
+      const newData = { ...data, ingredients: ingArr };
+      onSave(newData);
+      onClose();
+      reset();
+    } else {
+      return false;
+    }
   };
 
   if (!isOpen) {
@@ -86,8 +79,6 @@ const AddRecipeModal = ({
                       name="title"
                       id="title"
                       placeholder="Recipe Title"
-                      onChange={handleInputChange}
-                      value={recipe.title}
                       {...register("title", {
                         required: true,
                         minLength: 4,
@@ -108,8 +99,6 @@ const AddRecipeModal = ({
                       name="description"
                       id="description"
                       placeholder="Recipe Description"
-                      onChange={handleInputChange}
-                      value={recipe.description}
                       {...register("description", {
                         required: true,
                         minLength: 150,
@@ -134,8 +123,6 @@ const AddRecipeModal = ({
                       name="ingredients"
                       id="ingredients"
                       placeholder="Ingredients (comma-separated)"
-                      onChange={handleInputChange}
-                      value={recipe.ingredients}
                       {...register("ingredients", {
                         required: true,
                         minLength: 4,
@@ -155,8 +142,6 @@ const AddRecipeModal = ({
                       name="image"
                       id="image"
                       placeholder="Image URL"
-                      onChange={handleInputChange}
-                      value={recipe.image}
                       className="mt-2 p-2 w-full border border-gray-300 rounded"
                     />
                   </div>
@@ -172,8 +157,8 @@ const AddRecipeModal = ({
               </button>
               <button
                 onClick={() => {
-                  setRecipe({});
                   onClose();
+                  reset();
                 }}
                 type="button"
                 className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
