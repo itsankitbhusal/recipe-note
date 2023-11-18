@@ -30,7 +30,6 @@ const Home = () => {
   };
   const handleClose = () => {
     setEditId(null);
-    // setSelectedId(null);
     setIsOpen(false);
   };
 
@@ -40,7 +39,7 @@ const Home = () => {
       const docRef = await addDoc(collection(db, DB_NAME), recipe);
       return docRef.id;
     } catch (error) {
-      console.error("Error: ", error);
+      toast.error(error);
     }
   };
 
@@ -54,43 +53,62 @@ const Home = () => {
 
     //   setRecipeData(newData);
     // });
-
-    const querySnapshot = await getDocs(collection(db, DB_NAME));
-    const newData = [];
-    querySnapshot.forEach((doc) => {
-      const dbData = { id: doc.id, ...doc.data().recipe };
-      newData.push(dbData);
-    });
-    setRecipeData(newData);
+    try {
+      const querySnapshot = await getDocs(collection(db, DB_NAME));
+      const newData = [];
+      querySnapshot.forEach((doc) => {
+        const dbData = { id: doc.id, ...doc.data() };
+        newData.push(dbData);
+      });
+      setRecipeData(newData);
+    } catch (error) {
+      toast.error(error);
+    }
   };
 
   // firebase delete
   const deleteData = async (id) => {
-    await deleteDoc(doc(db, DB_NAME, id));
+    try {
+      await deleteDoc(doc(db, DB_NAME, id));
+    } catch (error) {
+      console.error(error);
+      toast.error(error);
+    }
   };
 
   // edit data
   const editData = async (recipe) => {
-    await updateDoc(doc(db, DB_NAME, recipe.id), { recipe });
+    const sanitizedRecipe = {
+      ...recipe,
+      image: recipe.image ? recipe.image : "",
+    };
+    const docRef = doc(db, DB_NAME, sanitizedRecipe.id);
+    try {
+      await updateDoc(docRef, sanitizedRecipe);
+      toast.success("Recipe updated successfully!!");
+    } catch (error) {
+      console.error("Error updating document:", error);
+      toast.error(error);
+    }
   };
 
   const handleSave = async (recipe) => {
     let existingRecipe;
     if (recipeData.length > 0) {
       existingRecipe = recipeData.find((r) => r.id === recipe.id);
+      if (existingRecipe) {
+        const updateData = recipeData.map((r) =>
+          r.id === recipe.id ? { ...r, ...recipe } : r
+        );
+        editData(recipe);
+        setRecipeData(updateData);
+        return;
+      }
     }
-    if (existingRecipe) {
-      // console.log("old need to update");
-      const updateData = recipeData.map((r) =>
-        r.id === recipe.id ? { ...r, ...recipe } : r
-      );
-      editData(recipe);
-      setRecipeData(updateData);
-    } else {
-      // console.log("new data");
-      const newData = { ...recipeData, recipe };
-      const id = await addRecipe(newData);
+    const id = await addRecipe(recipe);
+    if (id) {
       setRecipeData([...recipeData, { ...recipe, id: id }]);
+      toast.success("Recipe added successfully!!");
     }
   };
 
