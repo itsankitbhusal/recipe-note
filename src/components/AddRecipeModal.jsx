@@ -3,13 +3,7 @@ import { useForm } from "react-hook-form";
 
 import ErrorMessage from "./ErrorMessage";
 
-const AddRecipeModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  recipeData,
-  updateData,
-}) => {
+const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
   const {
     register,
     handleSubmit,
@@ -24,20 +18,25 @@ const AddRecipeModal = ({
       setValue("description", updateData[0].description);
       setValue("ingredients", updateData[0].ingredients.join(", "));
       setValue("image", updateData[0].image);
-    } else {
-      console.log("no data caught");
     }
-  }, [updateData, setValue]);
+  }, [updateData]);
 
   const handleSave = (data) => {
+    console.log("handle save data: ", data)
     if (data.ingredients) {
       const ingArr = data.ingredients.split(",");
-      const newData = { ...data, ingredients: ingArr };
-      onSave(newData);
-      onClose();
-      reset();
-    } else {
-      return false;
+      if (updateData) {
+        const id = updateData[0].id;
+        const newData = { id, ...data, ingredients: ingArr };
+        onSave(newData);
+        onClose();
+        reset();
+      } else {
+        const newData = { ...data, ingredients: ingArr };
+        onSave(newData);
+        onClose();
+        reset();
+      }
     }
   };
 
@@ -142,6 +141,9 @@ const AddRecipeModal = ({
                       name="image"
                       id="image"
                       placeholder="Image URL"
+                      {...register("image", {
+                        required: false,
+                      })}
                       className="mt-2 p-2 w-full border border-gray-300 rounded"
                     />
                   </div>
