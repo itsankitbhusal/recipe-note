@@ -22,7 +22,7 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
   }, [updateData]);
 
   const handleSave = (data) => {
-    console.log("handle save data: ", data)
+    console.log("handle save data: ", data);
     if (data.ingredients) {
       const ingArr = data.ingredients.split(",");
       if (updateData) {
@@ -57,7 +57,7 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
           &#8203;
         </span>
         <div
-          className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+          className="inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle md:max-w-2xl lg:max-w-4xl sm:max-w-lg sm:w-screen"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-headline"
@@ -94,48 +94,6 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
                     {errors.title && errors.title.type === "maxLength" && (
                       <ErrorMessage message="Minimum length id 150 chars!" />
                     )}
-                    <textarea
-                      name="description"
-                      id="description"
-                      placeholder="Recipe Description"
-                      {...register("description", {
-                        required: true,
-                        minLength: 150,
-                        maxLength: 3000,
-                      })}
-                      className="mt-2 p-2 w-full border border-gray-300 rounded"
-                    />
-                    {errors.description &&
-                      errors.description.type === "required" && (
-                        <ErrorMessage message="Description is required!" />
-                      )}
-                    {errors.description &&
-                      errors.description.type === "minLength" && (
-                        <ErrorMessage message="Minimum length id 150 chars!" />
-                      )}
-                    {errors.description &&
-                      errors.description.type === "maxLength" && (
-                        <ErrorMessage message="Minimum length id 3000 chars!" />
-                      )}
-                    <input
-                      type="text"
-                      name="ingredients"
-                      id="ingredients"
-                      placeholder="Ingredients (comma-separated)"
-                      {...register("ingredients", {
-                        required: true,
-                        minLength: 4,
-                      })}
-                      className="mt-2 p-2 w-full border border-gray-300 rounded"
-                    />
-                    {errors.ingredients &&
-                      errors.ingredients.type === "required" && (
-                        <ErrorMessage message="Ingredients is required!" />
-                      )}
-                    {errors.ingredients &&
-                      errors.ingredients.type === "minLength" && (
-                        <ErrorMessage message="Minimum length id 4 chars!" />
-                      )}
                     <input
                       type="text"
                       name="image"
@@ -146,6 +104,52 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
                       })}
                       className="mt-2 p-2 w-full border border-gray-300 rounded"
                     />
+                    <div className=" flex gap-2 flex-col md:flex-row justify-center items-center">
+                      <textarea
+                        name="description"
+                        id="description"
+                        rows="4"
+                        placeholder="Recipe Description"
+                        {...register("description", {
+                          required: true,
+                          minLength: 150,
+                          maxLength: 3000,
+                        })}
+                        className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
+                      />
+                      {errors.description &&
+                        errors.description.type === "required" && (
+                          <ErrorMessage message="Description is required!" />
+                        )}
+                      {errors.description &&
+                        errors.description.type === "minLength" && (
+                          <ErrorMessage message="Minimum length id 150 chars!" />
+                        )}
+                      {errors.description &&
+                        errors.description.type === "maxLength" && (
+                          <ErrorMessage message="Minimum length id 3000 chars!" />
+                        )}
+                      <textarea
+                        type="text"
+                        name="ingredients"
+                        id="ingredients"
+                        rows="4"
+                        placeholder="Ingredients (comma-separated)"
+                        {...register("ingredients", {
+                          required: true,
+                          minLength: 4,
+                        })}
+                        className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
+                      />
+                      {errors.ingredients &&
+                        errors.ingredients.type === "required" && (
+                          <ErrorMessage message="Ingredients is required!" />
+                        )}
+                      {errors.ingredients &&
+                        errors.ingredients.type === "minLength" && (
+                          <ErrorMessage message="Minimum length id 4 chars!" />
+                        )}
+                    </div>
                   </div>
                 </div>
               </div>

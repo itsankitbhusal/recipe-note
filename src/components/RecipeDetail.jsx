@@ -15,9 +15,9 @@ const RecipeDetail = ({ data, handleDelete, handleEdit }) => {
           ""
         )}
       </div>
-      <div className={` px-8 pb-4 ${!image && "mt-6"} `}>
+      <div className={` px-2 pb-2 md:px-8 md:pb-4 ${!image && "mt-6"} `}>
         <div className=" border-b-[1px] mb-4 flex w-full justify-between items-center">
-          <h3 className=" font-bold text-2xl uppercase tracking-tight mb-2 ">
+          <h3 className=" font-bold text-xl md:text-2xl uppercase tracking-tight mb-2 ">
             {title}
           </h3>
           <div className=" flex gap-4 items-center justify-center">
