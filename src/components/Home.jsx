@@ -146,10 +146,10 @@ const Home = () => {
   return (
     <div className="relative min-h-screen w-full grid place-items-center">
       {recipeData.length > 0 ? (
-        <div className=" flex gap-8 w-10/12 min-h-[90vh] ">
-          <div className=" border-b-2 max-h-[90vh] overflow-x-auto w-4/12 px-8 py-4 min-h-full outline rounded outline-1 outline-gray-200">
+        <div className=" flex items-center lg:items-stretch flex-col lg:flex-row w-full gap-0 sm:gap-4 lg:gap-8 lg:w-10/12 min-h-[90vh] ">
+          <div className=" border-b-2 mt-0 sm:mt-8 lg:mt-0 max-h-[90vh] overflow-x-auto w-full sm:w-11/12 md:w-10/12 lg:w-4/12 px-2 py-2 md:px-8 md:py-4 min-h-full sm:outline sm:rounded sm:outline-1 outline-gray-200">
             <div className=" border-b-[1px] mb-2">
-              <div className=" mb-2  font-semibold tracking-tighter text-xl flex  justify-between items-center ">
+              <div className=" mb-2 font-semibold tracking-tighter text-xl flex  justify-between items-center ">
                 <h3>Recipe List</h3>
                 <AiOutlinePlus
                   onClick={handleAdd}
@@ -164,10 +164,10 @@ const Home = () => {
                       <div
                         className={`${
                           selectedId === recipe.id && "bg-gray-200"
-                        } p-2 rounded hover:cursor-pointer hover:bg-gray-300 `}
+                        } p-0 sm:p-2 rounded hover:cursor-pointer hover:bg-gray-300 `}
                         onClick={() => handleTitleClick(recipe.id)}
                       >
-                        <span className=" uppercase">
+                        <span className=" uppercase text-xs sm:text-sm md:text-base">
                           {"->"}{" "}
                           {recipe.title && recipe.title.length > 30
                             ? recipe.title.slice(0, 30) + "..."
@@ -179,7 +179,7 @@ const Home = () => {
                 })
               : "no data found"}
           </div>
-          <div className=" w-8/12 max-h-[90vh] overflow-y-auto outline rounded outline-1 outline-gray-200">
+          <div className=" w-full sm:w-11/12 md:w-10/12 lg:w-8/12 max-h-[90vh] overflow-y-auto sm:outline sm:rounded sm:outline-1 outline-gray-200">
             {selectedId && (
               <RecipeDetail
                 data={recipeData.filter((obj) => obj.id === selectedId)}
