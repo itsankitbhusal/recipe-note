@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 
 import ErrorMessage from "./ErrorMessage";
 
-const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
+const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
   const {
     register,
     handleSubmit,
@@ -70,7 +70,7 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
                     className="text-lg leading-6 font-medium text-gray-900"
                     id="modal-headline"
                   >
-                    Add New Recipe
+                    {edit ? "Edit Recipe Detail" : "Add New Recipe"}
                   </h3>
                   <div className="mt-2">
                     <input
@@ -104,51 +104,55 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData }) => {
                       })}
                       className="mt-2 p-2 w-full border border-gray-300 rounded"
                     />
-                    <div className=" flex gap-2 flex-col md:flex-row justify-center items-center">
-                      <textarea
-                        name="description"
-                        id="description"
-                        rows="4"
-                        placeholder="Recipe Description"
-                        {...register("description", {
-                          required: true,
-                          minLength: 150,
-                          maxLength: 3000,
-                        })}
-                        className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
-                      />
-                      {errors.description &&
-                        errors.description.type === "required" && (
-                          <ErrorMessage message="Description is required!" />
-                        )}
-                      {errors.description &&
-                        errors.description.type === "minLength" && (
-                          <ErrorMessage message="Minimum length id 150 chars!" />
-                        )}
-                      {errors.description &&
-                        errors.description.type === "maxLength" && (
-                          <ErrorMessage message="Minimum length id 3000 chars!" />
-                        )}
-                      <textarea
-                        type="text"
-                        name="ingredients"
-                        id="ingredients"
-                        rows="4"
-                        placeholder="Ingredients (comma-separated)"
-                        {...register("ingredients", {
-                          required: true,
-                          minLength: 4,
-                        })}
-                        className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
-                      />
-                      {errors.ingredients &&
-                        errors.ingredients.type === "required" && (
-                          <ErrorMessage message="Ingredients is required!" />
-                        )}
-                      {errors.ingredients &&
-                        errors.ingredients.type === "minLength" && (
-                          <ErrorMessage message="Minimum length id 4 chars!" />
-                        )}
+                    <div className=" flex gap-2 mt-4 flex-col md:flex-row justify-center items-center">
+                      <div className=" w-full">
+                        <textarea
+                          name="description"
+                          id="description"
+                          rows="4"
+                          placeholder="Recipe Description"
+                          {...register("description", {
+                            required: true,
+                            minLength: 150,
+                            maxLength: 3000,
+                          })}
+                          className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
+                        />
+                        {errors.description &&
+                          errors.description.type === "required" && (
+                            <ErrorMessage message="Description is required!" />
+                          )}
+                        {errors.description &&
+                          errors.description.type === "minLength" && (
+                            <ErrorMessage message="Minimum length id 150 chars!" />
+                          )}
+                        {errors.description &&
+                          errors.description.type === "maxLength" && (
+                            <ErrorMessage message="Minimum length id 3000 chars!" />
+                          )}
+                      </div>
+                      <div className=" w-full">
+                        <textarea
+                          type="text"
+                          name="ingredients"
+                          id="ingredients"
+                          rows="4"
+                          placeholder="Ingredients (comma-separated)"
+                          {...register("ingredients", {
+                            required: true,
+                            minLength: 4,
+                          })}
+                          className="mt-2 p-2 h-[20vh] md:h-[40vh] w-full border border-gray-300 rounded"
+                        />
+                        {errors.ingredients &&
+                          errors.ingredients.type === "required" && (
+                            <ErrorMessage message="Ingredients is required!" />
+                          )}
+                        {errors.ingredients &&
+                          errors.ingredients.type === "minLength" && (
+                            <ErrorMessage message="Minimum length id 4 chars!" />
+                          )}
+                      </div>
                     </div>
                   </div>
                 </div>
