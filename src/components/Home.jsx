@@ -17,13 +17,15 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
+import { storage } from "../firebase";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeData, setRecipeData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedId, setSelectedId] = useState(null);
-
   const [editId, setEditId] = useState(null);
 
   const handleAdd = () => {
@@ -34,26 +36,62 @@ const Home = () => {
     setIsOpen(false);
   };
 
+  const getUniqueName = (filename) => {
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9]/g, "");
+    const date = Date.now();
+    return `${cleanFilename}${date}`;
+  };
+
   // firebase add
   const addRecipe = async (recipe) => {
+    console.log("addRecipe: ", recipe);
+
+    const fileList = recipe.imageFile[0];
+    const storageRef = ref(storage, getUniqueName(fileList.name));
+
     try {
-      const docRef = await addDoc(collection(db, DB_NAME), recipe);
+      const uploadTaskSnapshot = await uploadBytesResumable(
+        storageRef,
+        fileList
+      );
+
+      // Wait for the upload to complete
+      await getDownloadURL(uploadTaskSnapshot.ref);
+
+      // Once the upload is complete, proceed with adding the rest of the data
+      const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+      console.log("download url: ", downloadUrl);
+      let id;
+      if (downloadUrl) {
+        id = await addRestData(recipe, downloadUrl);
+      }
+      return { id, downloadUrl };
+    } catch (error) {
+      console.log("Error uploading file:", error);
+      toast.error(error);
+    }
+  };
+
+  // function after the imageUrl
+  const addRestData = async (recipe, imageUrl) => {
+    try {
+      const { imageFile, ...newData } = recipe;
+      const updatedData = {
+        ...newData,
+        image: imageUrl ? imageUrl : newData.image,
+      };
+
+      const docRef = await addDoc(collection(db, DB_NAME), updatedData);
       return docRef.id;
     } catch (error) {
+      console.log("Error adding document:", error);
       toast.error(error);
+      return null; // Return null in case of an error
     }
   };
 
   // firebase read
   const fetchData = async () => {
-    // await getDocs(collection(db, DB_NAME)).then((querySnapshot) => {
-    //   const newData = querySnapshot.docs.map((doc) => ({
-    //     ...doc.data().recipe,
-    //     id: doc.id,
-    //   }));
-
-    //   setRecipeData(newData);
-    // });
     try {
       setIsLoading(true);
       const querySnapshot = await getDocs(collection(db, DB_NAME));
@@ -109,9 +147,13 @@ const Home = () => {
         return;
       }
     }
-    const id = await addRecipe(recipe);
+    const { id, downloadUrl } = await addRecipe(recipe);
+    console.log("image url on handleSave", downloadUrl);
+    console.log("id on handle Save", id);
     if (id) {
-      setRecipeData([...recipeData, { ...recipe, id: id }]);
+      const { imageFile, ...newData } = recipe;
+
+      setRecipeData([...recipeData, { ...newData, id: id, image: downloadUrl }]);
       toast.success("Recipe added successfully!!");
     }
   };
@@ -145,12 +187,14 @@ const Home = () => {
 
   const handleTitleClick = (id) => {
     setSelectedId(id);
-  }; 
+  };
 
   if (isLoading) {
-    return <div className=" min-h-screen w-full grid place-items-center text-4xl tracking-tighter font-bold">
-    Loading...
-    </div>
+    return (
+      <div className=" min-h-screen w-full grid place-items-center text-4xl tracking-tighter font-bold">
+        Loading...
+      </div>
+    );
   }
 
   return (
