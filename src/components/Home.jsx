@@ -20,6 +20,7 @@ import {
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeData, setRecipeData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [selectedId, setSelectedId] = useState(null);
 
@@ -54,6 +55,7 @@ const Home = () => {
     //   setRecipeData(newData);
     // });
     try {
+      setIsLoading(true);
       const querySnapshot = await getDocs(collection(db, DB_NAME));
       const newData = [];
       querySnapshot.forEach((doc) => {
@@ -61,7 +63,9 @@ const Home = () => {
         newData.push(dbData);
       });
       setRecipeData(newData);
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       toast.error(error);
     }
   };
@@ -141,7 +145,13 @@ const Home = () => {
 
   const handleTitleClick = (id) => {
     setSelectedId(id);
-  };
+  }; 
+
+  if (isLoading) {
+    return <div className=" min-h-screen w-full grid place-items-center text-4xl tracking-tighter font-bold">
+    Loading...
+    </div>
+  }
 
   return (
     <div className="relative min-h-screen w-full grid place-items-center">
