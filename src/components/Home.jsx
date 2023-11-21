@@ -191,6 +191,7 @@ const Home = () => {
           {editId ? (
             <AddRecipeModal
               isOpen={isOpen}
+              edit={true}
               onClose={handleClose}
               onSave={handleSave}
               recipeData={recipeData}
