@@ -2,8 +2,12 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import ErrorMessage from "./ErrorMessage";
+import { useState } from "react";
 
 const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showFile, setShowFile] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -104,6 +108,54 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
                       })}
                       className="mt-2 p-2 w-full border border-gray-300 rounded"
                     />
+                    <div className=" relative">
+                      <input
+                        type="file"
+                        name="imageFile"
+                        accept="image/png, image/jpeg"
+                        {...register("imageFile", {
+                          required: false,
+                        })}
+                        onChange={(e) => {
+                          const fileList = e.target.files;
+                          if (fileList) {
+                            try {
+                              setSelectedFile(URL.createObjectURL(fileList[0]));
+                            } catch (error) {
+                              setSelectedFile(false);
+                            }
+
+                            console.log(URL.createObjectURL(fileList[0]));
+                          }
+                        }}
+                        onMouseEnter={() => {
+                          if (selectedFile) {
+                            setShowFile(true);
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (selectedFile) {
+                            setShowFile(false);
+                          }
+                        }}
+                        className="w-full file:mr-4 mt-2 p-2 border border-gray-300 rounded file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold hover:file:cursor-pointer hover:file:bg-gray-200"
+                      />
+                      {selectedFile && (
+                        <div className=" hidden lg:flex absolute text-xs text-green-700">
+                          Hover filename for image preview
+                        </div>
+                      )}
+                      {showFile && (
+                        <div className=" absolute right-0 top-16">
+                          <img
+                            src={selectedFile}
+                            className=" object-cover w-auto h-[200px] rounded drop-shadow-2xl"
+                            alt=""
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     <div className=" flex gap-2 mt-4 flex-col md:flex-row justify-center items-center">
                       <div className=" w-full">
                         <textarea
