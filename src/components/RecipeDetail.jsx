@@ -1,7 +1,7 @@
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 
 const RecipeDetail = ({ data, handleDelete, handleEdit }) => {
-  let { title, description, ingredients, image, id } = data[0] ;
+  let { title, description, ingredients, image, id } = data[0];
   return (
     <div>
       <div className="  z-0 w-full bg-red-200">
@@ -41,11 +41,11 @@ const RecipeDetail = ({ data, handleDelete, handleEdit }) => {
         </div>
         <div>
           <h4 className=" font-semibold tracking-tight">Ingredients</h4>
-          <ol className="ml-4">
+          <ul className="ml-8 list-decimal" >
             {ingredients?.map((element, index) => {
               return <li key={index}>{element}</li>;
             })}
-          </ol>
+          </ul>
         </div>
       </div>
     </div>
