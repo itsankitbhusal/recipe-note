@@ -2,8 +2,14 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import ErrorMessage from "./ErrorMessage";
+import { useState } from "react";
 
 const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showFile, setShowFile] = useState(false);
+
+  const [isInputFile, setIsInputFile] = useState(null);
+
   const {
     register,
     handleSubmit,
@@ -22,10 +28,11 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
   }, [updateData]);
 
   const handleSave = (data) => {
-    console.log("handle save data: ", data);
+  
     if (data.ingredients) {
       const ingArr = data.ingredients.split(",");
       if (updateData) {
+        
         const id = updateData[0].id;
         const newData = { id, ...data, ingredients: ingArr };
         onSave(newData);
@@ -72,40 +79,114 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
                   >
                     {edit ? "Edit Recipe Detail" : "Add New Recipe"}
                   </h3>
+                  <div className=" flex gap-2 items-center">
+                    <label className="text-gray-600">
+                      What option do you want for the image?
+                    </label>
+                    <div className="relative inline-flex">
+                      <select
+                        name="image"
+                        onChange={(e) => {
+                          if (e.target.value === "imageUpload") {
+                            setIsInputFile(true);
+                          } else {
+                            setIsInputFile(false);
+                          }
+                        }}
+                        className="rounded-md font-medium border-none p-2 pl-5 pr-8 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="placeUrl">Place URL</option>
+                        <option value="imageUpload">Image Upload</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="mt-2">
-                    <input
-                      type="text"
-                      name="title"
-                      id="title"
-                      placeholder="Recipe Title"
-                      {...register("title", {
-                        required: true,
-                        minLength: 4,
-                        maxLength: 150,
-                      })}
-                      className="mt-2 p-2 w-full border border-gray-300 rounded"
-                    />
-                    {errors.title && errors.title.type === "required" && (
-                      <ErrorMessage message="Title is required!" />
+                    {!isInputFile ? (
+                      <input
+                        type="text"
+                        name="image"
+                        id="image"
+                        placeholder="Image URL"
+                        {...register("image", {
+                          required: false,
+                        })}
+                        className="mt-2 p-2 w-full border border-gray-300 rounded"
+                      />
+                    ) : (
+                      <div className=" relative">
+                        <input
+                          type="file"
+                          name="imageFile"
+                          accept="image/png, image/jpeg"
+                          {...register("imageFile", {
+                            required: false,
+                          })}
+                          onChange={(e) => {
+                            const fileList = e.target.files;
+                            if (fileList) {
+                              try {
+                                setSelectedFile(
+                                  URL.createObjectURL(fileList[0])
+                                );
+                              } catch (error) {
+                                setSelectedFile(false);
+                              }
+                            }
+                          }}
+                          onMouseEnter={() => {
+                            if (selectedFile) {
+                              setShowFile(true);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            if (selectedFile) {
+                              setShowFile(false);
+                            }
+                          }}
+                          className="w-full file:mr-4 mt-2 p-2 border border-gray-300 rounded file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold hover:file:cursor-pointer hover:file:bg-gray-200"
+                        />
+                        {selectedFile && (
+                          <div className=" hidden lg:flex absolute text-xs text-green-700">
+                            Hover filename for image preview
+                          </div>
+                        )}
+                        {showFile && (
+                          <div className=" absolute right-0 top-16">
+                            <img
+                              src={selectedFile}
+                              className=" object-cover w-auto h-[200px] rounded drop-shadow-2xl"
+                              alt=""
+                            />
+                          </div>
+                        )}
+                      </div>
                     )}
-                    {errors.title && errors.title.type === "minLength" && (
-                      <ErrorMessage message="Minimum length id 4 chars!" />
-                    )}
-                    {errors.title && errors.title.type === "maxLength" && (
-                      <ErrorMessage message="Minimum length id 150 chars!" />
-                    )}
-                    <input
-                      type="text"
-                      name="image"
-                      id="image"
-                      placeholder="Image URL"
-                      {...register("image", {
-                        required: false,
-                      })}
-                      className="mt-2 p-2 w-full border border-gray-300 rounded"
-                    />
+
+                      <div className=" mt-4">
+                        <input
+                          type="text"
+                          name="title"
+                          id="title"
+                          placeholder="Recipe Title"
+                          {...register("title", {
+                            required: true,
+                            minLength: 4,
+                            maxLength: 150,
+                          })}
+                          className="mt-2 p-2 w-full border border-gray-300 rounded"
+                        />
+                        {errors.title && errors.title.type === "required" && (
+                          <ErrorMessage message="Title is required!" />
+                        )}
+                        {errors.title && errors.title.type === "minLength" && (
+                          <ErrorMessage message="Minimum length id 4 chars!" />
+                        )}
+                        {errors.title && errors.title.type === "maxLength" && (
+                          <ErrorMessage message="Minimum length id 150 chars!" />
+                        )}
+                      </div>
                     <div className=" flex gap-2 mt-4 flex-col md:flex-row justify-center items-center">
-                      <div className=" w-full">
+                      <div className=" w-8/12">
                         <textarea
                           name="description"
                           id="description"
@@ -131,7 +212,7 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
                             <ErrorMessage message="Minimum length id 3000 chars!" />
                           )}
                       </div>
-                      <div className=" w-full">
+                      <div className=" w-4/12">
                         <textarea
                           type="text"
                           name="ingredients"

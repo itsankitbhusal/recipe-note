@@ -17,12 +17,20 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
+import { storage } from "../firebase";
+import {
+  ref,
+  getDownloadURL,
+  uploadBytesResumable,
+  deleteObject,
+} from "firebase/storage";
+
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeData, setRecipeData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [selectedId, setSelectedId] = useState(null);
-
   const [editId, setEditId] = useState(null);
 
   const handleAdd = () => {
@@ -33,27 +41,65 @@ const Home = () => {
     setIsOpen(false);
   };
 
+  const getUniqueName = (filename) => {
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9]/g, "");
+    const date = Date.now();
+    return `${cleanFilename}${date}`;
+  };
+
   // firebase add
   const addRecipe = async (recipe) => {
     try {
-      const docRef = await addDoc(collection(db, DB_NAME), recipe);
-      return docRef.id;
+      if (recipe.fileList) {
+        const fileList = recipe.imageFile[0];
+        const storageRef = ref(storage, getUniqueName(fileList.name));
+
+        const uploadTaskSnapshot = await uploadBytesResumable(
+          storageRef,
+          fileList
+        );
+
+        // Wait for the upload to complete
+        await getDownloadURL(uploadTaskSnapshot.ref);
+
+        // Once the upload is complete, proceed with adding the rest of the data
+        const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+        let id;
+        if (downloadUrl) {
+          id = await addRestData(recipe, downloadUrl);
+        }
+        return { id, downloadUrl };
+      } else {
+        const id = await addRestData(recipe, recipe.image);
+        const url = recipe.image;
+        return { id, downloadUrl: url };
+      }
     } catch (error) {
       toast.error(error);
     }
   };
 
+  // function after the imageUrl
+  const addRestData = async (recipe, imageUrl) => {
+    try {
+      const { imageFile, ...newData } = recipe;
+      const updatedData = {
+        ...newData,
+        image: imageUrl ? imageUrl : newData.image,
+      };
+
+      const docRef = await addDoc(collection(db, DB_NAME), updatedData);
+      return docRef.id;
+    } catch (error) {
+      toast.error(error);
+      return null; // Return null in case of an error
+    }
+  };
+
   // firebase read
   const fetchData = async () => {
-    // await getDocs(collection(db, DB_NAME)).then((querySnapshot) => {
-    //   const newData = querySnapshot.docs.map((doc) => ({
-    //     ...doc.data().recipe,
-    //     id: doc.id,
-    //   }));
-
-    //   setRecipeData(newData);
-    // });
     try {
+      setIsLoading(true);
       const querySnapshot = await getDocs(collection(db, DB_NAME));
       const newData = [];
       querySnapshot.forEach((doc) => {
@@ -61,15 +107,19 @@ const Home = () => {
         newData.push(dbData);
       });
       setRecipeData(newData);
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       toast.error(error);
     }
   };
 
   // firebase delete
-  const deleteData = async (id) => {
+  const deleteData = async (id, image) => {
     try {
+      const imageRef = ref(storage, image);
       await deleteDoc(doc(db, DB_NAME, id));
+      await deleteObject(imageRef);
     } catch (error) {
       console.error(error);
       toast.error(error);
@@ -92,32 +142,66 @@ const Home = () => {
     }
   };
 
+  const uploadImage = async (file) => {
+    // upload image to firebase
+    if (file) {
+      const storageRef = ref(storage, getUniqueName(file.name));
+
+      const uploadTaskSnapshot = await uploadBytesResumable(storageRef, file);
+
+      // Wait for the upload to complete
+      await getDownloadURL(uploadTaskSnapshot.ref);
+
+      // Once the upload is complete, proceed with adding the rest of the data
+      const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+      return downloadUrl;
+    }
+  };
+
   const handleSave = async (recipe) => {
     let existingRecipe;
     if (recipeData.length > 0) {
       existingRecipe = recipeData.find((r) => r.id === recipe.id);
       if (existingRecipe) {
-        const updateData = recipeData.map((r) =>
-          r.id === recipe.id ? { ...r, ...recipe } : r
-        );
-        editData(recipe);
-        setRecipeData(updateData);
-        return;
+        if (recipe?.imageFile) {
+          const newUrl = await uploadImage(recipe.imageFile[0]);
+          const newData = { ...recipe, image: newUrl ? newUrl : recipe.image };
+          const { imageFile, ...restData } = newData;
+
+          const updateData = recipeData.map((r) =>
+            r.id === restData.id ? { ...r, ...restData } : r
+          );
+          editData(restData);
+          setRecipeData(updateData);
+          return;
+        } else {
+          const updateData = recipeData.map((r) =>
+            r.id === recipe.id ? { ...r, ...recipe } : r
+          );
+          editData(recipe);
+          setRecipeData(updateData);
+          return;
+        }
       }
     }
-    const id = await addRecipe(recipe);
+    const { id, downloadUrl } = await addRecipe(recipe);
     if (id) {
-      setRecipeData([...recipeData, { ...recipe, id: id }]);
+      const { imageFile, ...newData } = recipe;
+
+      setRecipeData([
+        ...recipeData,
+        { ...newData, id: id, image: downloadUrl },
+      ]);
       toast.success("Recipe added successfully!!");
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, image) => {
     const confirm = window.confirm(
       "Are you sure you want to delete the recipe"
     );
     if (confirm) {
-      if (deleteData(id)) {
+      if (deleteData(id, image)) {
         const updatedRecipeData = recipeData.filter((data) => data.id !== id);
         setRecipeData(updatedRecipeData);
         setSelectedId(null);
@@ -142,6 +226,14 @@ const Home = () => {
   const handleTitleClick = (id) => {
     setSelectedId(id);
   };
+
+  if (isLoading) {
+    return (
+      <div className=" min-h-screen w-full grid place-items-center text-4xl tracking-tighter font-bold">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full grid place-items-center">
