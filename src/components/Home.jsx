@@ -18,7 +18,12 @@ import {
 } from "firebase/firestore";
 
 import { storage } from "../firebase";
-import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import {
+  ref,
+  getDownloadURL,
+  uploadBytesResumable,
+  deleteObject,
+} from "firebase/storage";
 
 const Home = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,30 +49,32 @@ const Home = () => {
 
   // firebase add
   const addRecipe = async (recipe) => {
-    console.log("addRecipe: ", recipe);
-
-    const fileList = recipe.imageFile[0];
-    const storageRef = ref(storage, getUniqueName(fileList.name));
-
     try {
-      const uploadTaskSnapshot = await uploadBytesResumable(
-        storageRef,
-        fileList
-      );
+      if (recipe.fileList) {
+        const fileList = recipe.imageFile[0];
+        const storageRef = ref(storage, getUniqueName(fileList.name));
 
-      // Wait for the upload to complete
-      await getDownloadURL(uploadTaskSnapshot.ref);
+        const uploadTaskSnapshot = await uploadBytesResumable(
+          storageRef,
+          fileList
+        );
 
-      // Once the upload is complete, proceed with adding the rest of the data
-      const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
-      console.log("download url: ", downloadUrl);
-      let id;
-      if (downloadUrl) {
-        id = await addRestData(recipe, downloadUrl);
+        // Wait for the upload to complete
+        await getDownloadURL(uploadTaskSnapshot.ref);
+
+        // Once the upload is complete, proceed with adding the rest of the data
+        const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+        let id;
+        if (downloadUrl) {
+          id = await addRestData(recipe, downloadUrl);
+        }
+        return { id, downloadUrl };
+      } else {
+        const id = await addRestData(recipe, recipe.image);
+        const url = recipe.image;
+        return { id, downloadUrl: url };
       }
-      return { id, downloadUrl };
     } catch (error) {
-      console.log("Error uploading file:", error);
       toast.error(error);
     }
   };
@@ -84,7 +91,6 @@ const Home = () => {
       const docRef = await addDoc(collection(db, DB_NAME), updatedData);
       return docRef.id;
     } catch (error) {
-      console.log("Error adding document:", error);
       toast.error(error);
       return null; // Return null in case of an error
     }
@@ -109,9 +115,11 @@ const Home = () => {
   };
 
   // firebase delete
-  const deleteData = async (id) => {
+  const deleteData = async (id, image) => {
     try {
+      const imageRef = ref(storage, image);
       await deleteDoc(doc(db, DB_NAME, id));
+      await deleteObject(imageRef);
     } catch (error) {
       console.error(error);
       toast.error(error);
@@ -134,36 +142,66 @@ const Home = () => {
     }
   };
 
+  const uploadImage = async (file) => {
+    // upload image to firebase
+    if (file) {
+      const storageRef = ref(storage, getUniqueName(file.name));
+
+      const uploadTaskSnapshot = await uploadBytesResumable(storageRef, file);
+
+      // Wait for the upload to complete
+      await getDownloadURL(uploadTaskSnapshot.ref);
+
+      // Once the upload is complete, proceed with adding the rest of the data
+      const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+      return downloadUrl;
+    }
+  };
+
   const handleSave = async (recipe) => {
     let existingRecipe;
     if (recipeData.length > 0) {
       existingRecipe = recipeData.find((r) => r.id === recipe.id);
       if (existingRecipe) {
-        const updateData = recipeData.map((r) =>
-          r.id === recipe.id ? { ...r, ...recipe } : r
-        );
-        editData(recipe);
-        setRecipeData(updateData);
-        return;
+        if (recipe?.imageFile) {
+          const newUrl = await uploadImage(recipe.imageFile[0]);
+          const newData = { ...recipe, image: newUrl ? newUrl : recipe.image };
+          const { imageFile, ...restData } = newData;
+
+          const updateData = recipeData.map((r) =>
+            r.id === restData.id ? { ...r, ...restData } : r
+          );
+          editData(restData);
+          setRecipeData(updateData);
+          return;
+        } else {
+          const updateData = recipeData.map((r) =>
+            r.id === recipe.id ? { ...r, ...recipe } : r
+          );
+          editData(recipe);
+          setRecipeData(updateData);
+          return;
+        }
       }
     }
     const { id, downloadUrl } = await addRecipe(recipe);
-    console.log("image url on handleSave", downloadUrl);
-    console.log("id on handle Save", id);
     if (id) {
       const { imageFile, ...newData } = recipe;
 
-      setRecipeData([...recipeData, { ...newData, id: id, image: downloadUrl }]);
+      setRecipeData([
+        ...recipeData,
+        { ...newData, id: id, image: downloadUrl },
+      ]);
       toast.success("Recipe added successfully!!");
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, image) => {
     const confirm = window.confirm(
       "Are you sure you want to delete the recipe"
     );
     if (confirm) {
-      if (deleteData(id)) {
+      if (deleteData(id, image)) {
         const updatedRecipeData = recipeData.filter((data) => data.id !== id);
         setRecipeData(updatedRecipeData);
         setSelectedId(null);
