@@ -5,7 +5,7 @@ import ErrorMessage from "./ErrorMessage";
 import { useState } from "react";
 
 const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(false);
   const [showFile, setShowFile] = useState(false);
 
   const [isInputFile, setIsInputFile] = useState(null);
@@ -24,24 +24,25 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
       setValue("description", updateData[0].description);
       setValue("ingredients", updateData[0].ingredients.join(", "));
       setValue("image", updateData[0].image);
+      setValue("imageList", null);
     }
   }, [updateData]);
 
   const handleSave = (data) => {
-  
     if (data.ingredients) {
       const ingArr = data.ingredients.split(",");
       if (updateData) {
-        
         const id = updateData[0].id;
         const newData = { id, ...data, ingredients: ingArr };
         onSave(newData);
         onClose();
+        setIsInputFile(false);
         reset();
       } else {
         const newData = { ...data, ingredients: ingArr };
         onSave(newData);
         onClose();
+        setIsInputFile(false);
         reset();
       }
     }
@@ -93,6 +94,7 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
                             setIsInputFile(false);
                           }
                         }}
+                        value={isInputFile ? "imageUpload" : "placeUrl"}
                         className="rounded-md font-medium border-none p-2 pl-5 pr-8 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="placeUrl">Place URL</option>
@@ -162,29 +164,29 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
                       </div>
                     )}
 
-                      <div className=" mt-4">
-                        <input
-                          type="text"
-                          name="title"
-                          id="title"
-                          placeholder="Recipe Title"
-                          {...register("title", {
-                            required: true,
-                            minLength: 4,
-                            maxLength: 150,
-                          })}
-                          className="mt-2 p-2 w-full border border-gray-300 rounded"
-                        />
-                        {errors.title && errors.title.type === "required" && (
-                          <ErrorMessage message="Title is required!" />
-                        )}
-                        {errors.title && errors.title.type === "minLength" && (
-                          <ErrorMessage message="Minimum length id 4 chars!" />
-                        )}
-                        {errors.title && errors.title.type === "maxLength" && (
-                          <ErrorMessage message="Minimum length id 150 chars!" />
-                        )}
-                      </div>
+                    <div className=" mt-4">
+                      <input
+                        type="text"
+                        name="title"
+                        id="title"
+                        placeholder="Recipe Title"
+                        {...register("title", {
+                          required: true,
+                          minLength: 4,
+                          maxLength: 150,
+                        })}
+                        className="mt-2 p-2 w-full border border-gray-300 rounded"
+                      />
+                      {errors.title && errors.title.type === "required" && (
+                        <ErrorMessage message="Title is required!" />
+                      )}
+                      {errors.title && errors.title.type === "minLength" && (
+                        <ErrorMessage message="Minimum length id 4 chars!" />
+                      )}
+                      {errors.title && errors.title.type === "maxLength" && (
+                        <ErrorMessage message="Minimum length id 150 chars!" />
+                      )}
+                    </div>
                     <div className=" flex gap-2 mt-4 flex-col md:flex-row justify-center items-center">
                       <div className=" w-8/12">
                         <textarea
@@ -249,6 +251,9 @@ const AddRecipeModal = ({ isOpen, onClose, onSave, updateData, edit }) => {
               <button
                 onClick={() => {
                   onClose();
+                  setValue();
+                  setSelectedFile(false);
+                  setValue("imageFile", null); 
                   reset();
                 }}
                 type="button"
