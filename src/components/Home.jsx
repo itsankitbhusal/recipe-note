@@ -50,20 +50,8 @@ const Home = () => {
   // firebase add
   const addRecipe = async (recipe) => {
     try {
-      if (recipe.fileList) {
-        const fileList = recipe.imageFile[0];
-        const storageRef = ref(storage, getUniqueName(fileList.name));
-
-        const uploadTaskSnapshot = await uploadBytesResumable(
-          storageRef,
-          fileList
-        );
-
-        // Wait for the upload to complete
-        await getDownloadURL(uploadTaskSnapshot.ref);
-
-        // Once the upload is complete, proceed with adding the rest of the data
-        const downloadUrl = await getDownloadURL(uploadTaskSnapshot.ref);
+      if (recipe.imageFile) {
+        const downloadUrl = await uploadImage(recipe.imageFile[0]);
         let id;
         if (downloadUrl) {
           id = await addRestData(recipe, downloadUrl);
@@ -117,9 +105,13 @@ const Home = () => {
   // firebase delete
   const deleteData = async (id, image) => {
     try {
-      const imageRef = ref(storage, image);
       await deleteDoc(doc(db, DB_NAME, id));
-      await deleteObject(imageRef);
+      if (image?.startsWith("https://firebasestorage.googleapis.com/")) {
+        const imageRef = ref(storage, image);
+        await deleteObject(imageRef);
+        toast.success("Image deleted from firebase!!");
+      }
+      return true;
     } catch (error) {
       console.error(error);
       toast.error(error);
@@ -165,6 +157,16 @@ const Home = () => {
       if (existingRecipe) {
         if (recipe?.imageFile) {
           const newUrl = await uploadImage(recipe.imageFile[0]);
+
+          if (
+            existingRecipe.image?.startsWith(
+              "https://firebasestorage.googleapis.com/"
+            )
+          ) {
+            const previousImageRef = ref(storage, existingRecipe.image);
+            await deleteObject(previousImageRef);
+          }
+
           const newData = { ...recipe, image: newUrl ? newUrl : recipe.image };
           const { imageFile, ...restData } = newData;
 
@@ -175,6 +177,15 @@ const Home = () => {
           setRecipeData(updateData);
           return;
         } else {
+          if (
+            existingRecipe.image?.startsWith(
+              "https://firebasestorage.googleapis.com/"
+            ) &&
+            existingRecipe.image !== recipe.image
+          ) {
+            const previousImageRef = ref(storage, existingRecipe.image);
+            await deleteObject(previousImageRef);
+          }
           const updateData = recipeData.map((r) =>
             r.id === recipe.id ? { ...r, ...recipe } : r
           );
@@ -182,17 +193,18 @@ const Home = () => {
           setRecipeData(updateData);
           return;
         }
-      }
-    }
-    const { id, downloadUrl } = await addRecipe(recipe);
-    if (id) {
-      const { imageFile, ...newData } = recipe;
+      } else {
+        const { id, downloadUrl } = await addRecipe(recipe);
+        if (id) {
+          const { imageFile, ...newData } = recipe;
 
-      setRecipeData([
-        ...recipeData,
-        { ...newData, id: id, image: downloadUrl },
-      ]);
-      toast.success("Recipe added successfully!!");
+          setRecipeData([
+            ...recipeData,
+            { ...newData, id: id, image: downloadUrl ? downloadUrl : newData.image },
+          ]);
+          toast.success("Recipe added successfully!!");
+        }
+      }
     }
   };
 
