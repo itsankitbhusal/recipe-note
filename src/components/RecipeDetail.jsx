@@ -29,7 +29,7 @@ const RecipeDetail = ({ data, handleDelete, handleEdit }) => {
             />
             <AiOutlineDelete
               onClick={() => {
-                handleDelete(id);
+                handleDelete(id, image);
               }}
               className=" text-2xl text-blue-700 hover:text-red-700 hover:cursor-pointer"
             />
